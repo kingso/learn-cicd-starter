@@ -4,19 +4,27 @@ on:
   push:
     branches: [main]
 
+
+    
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-
+        
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.22'
+        
+      - name: Install Goose
+        run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Build app
         run: scripts/buildprod.sh
@@ -33,6 +41,7 @@ jobs:
 
       - name: Build Docker image
         run: gcloud builds submit --tag us-central1-docker.pkg.dev/micro-bus-426018-c5/notely-ar-repo/notely:latest .
+        
 
       - name: Deploy to Cloud Run
         run: gcloud run deploy notely --image us-central1-docker.pkg.dev/micro-bus-426018-c5/notely-ar-repo/notely:latest --region us-central1 --allow-unauthenticated --project micro-bus-426018-c5 --max-instances=4
